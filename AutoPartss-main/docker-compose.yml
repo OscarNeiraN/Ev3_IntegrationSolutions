@@ -1,0 +1,15 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["gunicorn", "AutoParts.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+    volumes:
+      - ./backend/staticfiles:/app/backend/staticfiles
+      - ./backend/media:/app/backend/media
+      - ./backend/db.sqlite3:/app/backend/db.sqlite3
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=0
+      - ALLOWED_HOSTS=*
