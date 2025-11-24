@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-      uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -47,4 +47,3 @@ jobs:
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
-          
