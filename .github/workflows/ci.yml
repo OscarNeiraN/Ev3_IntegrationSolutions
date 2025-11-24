@@ -32,7 +32,7 @@ jobs:
             -e PYTHONUNBUFFERED=1 \
             -e DJANGO_SETTINGS_MODULE=AutoParts.settings \
             ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
-            python backend/manage.py test
+            python AutoPartss-main/backend/manage.py test
 
       - name: Log in to Docker Hub
         if: success()
@@ -41,9 +41,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Tag and push image (sha tag)
+      - name: Tag and push image
         if: success()
         run: |
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
+                     ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
