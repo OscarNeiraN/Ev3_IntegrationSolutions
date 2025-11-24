@@ -11,10 +11,8 @@ RUN apt-get update && apt-get install -y build-essential gcc gettext libpq-dev \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copia todo el repo dentro de /app
 COPY . /app/
 
-# Entramos al directorio donde está manage.py
 WORKDIR /app/backend
 
 EXPOSE 8000
