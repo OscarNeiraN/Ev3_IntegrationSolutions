@@ -22,15 +22,17 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} .
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
+            .
 
       - name: Run unit tests inside container
-        # Ejecuta el contenedor y lanza los tests de Django (manage.py test)
         run: |
           docker run --rm \
             -e PYTHONUNBUFFERED=1 \
             -e DJANGO_SETTINGS_MODULE=AutoParts.settings \
-            ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} python backend/manage.py test
+            ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
+            python manage.py test
 
       - name: Log in to Docker Hub
         if: success()
@@ -39,9 +41,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Tag and push image (sha tag)
+      - name: Tag and push image
         if: success()
         run: |
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
+                     ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
