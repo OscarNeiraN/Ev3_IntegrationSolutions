@@ -52,7 +52,7 @@ jobs:
       # SONARCLOUD
       # -----------------------------------
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+        uses: SonarSource/sonarcloud-github-action@49e6cd7b50a83696b12991f97c17b13e3b207d27
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,7 +76,7 @@ jobs:
           if [ -f "package.json" ]; then echo "node=true" >> $GITHUB_OUTPUT; fi
 
       - name: Setup Snyk CLI
-        uses: snyk/actions/setup@v1
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
