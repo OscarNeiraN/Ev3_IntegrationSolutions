@@ -16,17 +16,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # -----------------------------------
-      # CHECKOUT
-      # -----------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -----------------------------------
-      # PYTHON
-      # -----------------------------------
+
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -36,9 +32,6 @@ jobs:
         run: |
           if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
 
-      # -----------------------------------
-      # NODE
-      # -----------------------------------
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -48,27 +41,21 @@ jobs:
         run: |
           if [ -f "package.json" ]; then npm install; fi
 
-      # -----------------------------------
-      # SONARCLOUD
-      # -----------------------------------
+
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # -----------------------------------
-      # GITHUB ADVANCED SECURITY – DEPENDENCY REVIEW
-      # -----------------------------------
+
       - name: GitHub Advanced Security – Dependency Review
         if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
 
-      # -----------------------------------
-      # SNYK
-      # -----------------------------------
       - name: Detect Snyk project files
         id: snyk-detect
         run: |
@@ -97,9 +84,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # -----------------------------------
-      # DOCKER BUILD & TEST
-      # -----------------------------------
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -121,9 +106,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
             python manage.py test
 
-      # -----------------------------------
-      # DOCKER SCOUT (LOCAL ANALYSIS)
-      # -----------------------------------
+
       - name: Install Docker Scout
         run: |
           curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh
@@ -138,11 +121,10 @@ jobs:
       - name: Docker Scout Analysis
         run: |
           docker scout quickview ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
-          docker scout cves ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} --only-severity high,medium --exit-code
+          docker scout cves ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} 
+          
+          #--only-severity high,medium --exit-code
 
-      # -----------------------------------
-      # DOCKER HUB PUSH
-      # -----------------------------------
       - name: Log in to Docker Hub
         if: success()
         uses: docker/login-action@v2
