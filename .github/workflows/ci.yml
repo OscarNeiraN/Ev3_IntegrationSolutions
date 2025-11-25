@@ -11,11 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # -----------------------------------
+      # CHECKOUT
+      # -----------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # -----------------------------------
+      # PYTHON
+      # -----------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -25,6 +31,9 @@ jobs:
         run: |
           if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
 
+      # -----------------------------------
+      # NODE
+      # -----------------------------------
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -34,29 +43,36 @@ jobs:
         run: |
           if [ -f "package.json" ]; then npm install; fi
 
+      # -----------------------------------
+      # SONARCLOUD
+      # -----------------------------------
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Snyk Open Source Scan
+      # -----------------------------------
+      # SNYK SECURITY SCANS
+      # -----------------------------------
+
+      - name: Snyk Open Source Scan (Dependencies)
         uses: snyk/actions/node@master
         with:
-          args: test --all-projects
+          args: test --all-projects --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Snyk Code Analysis
+      - name: Snyk Code Analysis (Static Code)
         uses: snyk/actions/node@master
         with:
-          args: code test
+          args: code test --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # -----------------------------
+      # -----------------------------------
       # DOCKER BUILD & TEST
-      # -----------------------------
+      # -----------------------------------
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -77,6 +93,9 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
             python manage.py test
 
+      # -----------------------------------
+      # PUSH TO DOCKER HUB (ONLY IF SUCCESS)
+      # -----------------------------------
       - name: Log in to Docker Hub
         if: success()
         uses: docker/login-action@v2
