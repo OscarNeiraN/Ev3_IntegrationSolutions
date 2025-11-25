@@ -121,17 +121,23 @@ jobs:
             python manage.py test
 
       # -----------------------------------
-      # DOCKER SCOUT – SECURITY ANALYSIS
+      # DOCKER SCOUT – ANALYSIS WITHOUT HUB LOGIN
       # -----------------------------------
-      - name: Docker Scout – Analyze Image
+      - name: Docker Scout CVE Analysis
         uses: docker/scout-action@v1
         with:
           image: ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
           command: cves
           only-fixed: true
+          summary: true
+          format: json
+          use-hub: false        # ← evita el error de autenticación
+          write-comment: true   # publica comentario en PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # -----------------------------------
-      # DOCKER HUB PUSH
+      # PUSH IMAGE TO DOCKER HUB
       # -----------------------------------
       - name: Log in to Docker Hub
         if: success()
