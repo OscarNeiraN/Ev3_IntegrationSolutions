@@ -11,9 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # -----------------------------
-      # CHECKOUT
-      # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -31,21 +28,54 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install JS dependencies
         run: |
           if [ -f "package.json" ]; then npm install; fi
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.1.0
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # -----------------------------
-      # DOCKER BUILD / TEST
-      # -----------------------------
+      - name: GitHub Advanced Security – Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+      - name: GitHub Advanced Security – Secret Scanning
+        uses: github/secret-scanning-action@v1
+
+      - name: Detect Snyk project files
+        id: snyk-detect
+        run: |
+          if [ -f "requirements.txt" ]; then echo "python=true" >> $GITHUB_OUTPUT; fi
+          if [ -f "package.json" ]; then echo "node=true" >> $GITHUB_OUTPUT; fi
+
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@v1
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Snyk Open Source Scan (Python)
+        if: steps.snyk-detect.outputs.python == 'true'
+        run: snyk test --file=requirements.txt --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Snyk Open Source Scan (Node)
+        if: steps.snyk-detect.outputs.node == 'true'
+        run: snyk test --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Snyk Code Analysis (Static Code)
+        run: snyk code test --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -66,10 +96,6 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
             python manage.py test
 
-      # -----------------------------
-      # LOGIN & PUSH A DOCKER HUB
-      # SOLO SI TODO ESTÁ OK
-      # -----------------------------
       - name: Log in to Docker Hub
         if: success()
         uses: docker/login-action@v2
