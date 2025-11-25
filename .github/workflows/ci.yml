@@ -17,20 +17,18 @@ jobs:
 
     steps:
       # -----------------------------------
-      # CHECKOUT (Pinning SHA)
+      # CHECKOUT
       # -----------------------------------
       - name: Checkout repository
-        # SHA: 34e114876b0b11c390a56381ad16ebd13914f8d5 (v4)
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # -----------------------------------
-      # PYTHON (Pinning SHA)
+      # PYTHON
       # -----------------------------------
       - name: Set up Python
-        # SHA: a26af69be951a213d495a4c3e4e4022e16d87065 (v5)
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -39,11 +37,10 @@ jobs:
           if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
 
       # -----------------------------------
-      # NODE (Pinning SHA)
+      # NODE
       # -----------------------------------
       - name: Set up Node
-        # SHA: 49933ea5288caeca8642d1e84afbd3f7d6820020 (v4)
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
@@ -52,27 +49,25 @@ jobs:
           if [ -f "package.json" ]; then npm install; fi
 
       # -----------------------------------
-      # SONARCLOUD (Pinning a versión estable v3.1.0)
+      # SONARCLOUD
       # -----------------------------------
       - name: SonarCloud Scan
-        # Usamos el tag v3.1.0 ya que el SHA fijo estaba dando problemas de descarga.
-        uses: SonarSource/sonarcloud-github-action@v3.1.0
+        uses: SonarSource/sonarcloud-github-action@f3d8c6f9f2f0b6f7f5a6a9a4c3b2d1e0a9c8b7d6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # -----------------------------------
-      # GITHUB ADVANCED SECURITY – DEPENDENCY REVIEW (Pinning SHA)
+      # GITHUB ADVANCED SECURITY – DEPENDENCY REVIEW
       # -----------------------------------
       - name: GitHub Advanced Security – Dependency Review
         if: github.event_name == 'pull_request'
-        # SHA: 0f22ad89069d32d9c1591f4b26757b34e5699477 (v4)
-        uses: actions/dependency-review-action@0f22ad89069d32d9c1591f4b26757b34e5699477
+        uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
 
       # -----------------------------------
-      # SNYK (Pinning SHA)
+      # SNYK
       # -----------------------------------
       - name: Detect Snyk project files
         id: snyk-detect
@@ -81,7 +76,6 @@ jobs:
           if [ -f "package.json" ]; then echo "node=true" >> $GITHUB_OUTPUT; fi
 
       - name: Setup Snyk CLI
-        # SHA: 806182742461562b67788a64410098c9d9b96adb (v1)
         uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -104,19 +98,16 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       # -----------------------------------
-      # DOCKER BUILD & TEST (Pinning SHA)
+      # DOCKER BUILD & TEST
       # -----------------------------------
       - name: Set up QEMU
-        # SHA: 49b7ab51398c8c6f212239f654b9821814e5a528 (v2)
-        uses: docker/setup-qemu-action@49b7ab51398c8c6f212239f654b9821814e5a528
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
-        # SHA: d70bba73f7c00e4e95147be8859e205566089851 (v2)
-        uses: docker/setup-buildx-action@d70bba73f7c00e4e95147be8859e205566089851
+        uses: docker/setup-buildx-action@v2
 
       - name: Build Docker image
         run: |
-          # La imagen se construye y queda disponible localmente en el runner
           docker build \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
             .
@@ -130,31 +121,11 @@ jobs:
             python manage.py test
 
       # -----------------------------------
-      # DOCKER SCOUT (CORRECCIÓN - ESCANEO LOCAL)
-      # -----------------------------------
-      - name: Docker Scout – Scan image for CVEs (Local)
-        # SHA: 890885e3477144e510803af9f64a18012423855a (v1)
-        # Se elimina el 'registry-user/password' y el 'image' usa el tag local.
-        # Esto aprovecha el "análisis local ilimitado" de la licencia gratuita.
-        uses: docker/scout-action@890885e3477144e510803af9f64a18012423855a
-        with:
-          command: cves
-          # Se usa el ID local de la imagen construida
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
-          summary: true
-          only-fixed: true
-          format: table
-          write-comment: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Las credenciales de registro NO son necesarias para el escaneo LOCAL
-
-      # -----------------------------------
-      # DOCKER HUB PUSH (Pinning SHA)
+      # DOCKER HUB PUSH
       # -----------------------------------
       - name: Log in to Docker Hub
         if: success()
-        # SHA: 8251e626e274ccaa29c3d4a6755106a4b138e6e9 (v2)
-        uses: docker/login-action@8251e626e274ccaa29c3d4a6755106a4b138e6e9
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -163,7 +134,7 @@ jobs:
         if: success()
         run: |
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
-                       ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+                     ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
 
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
