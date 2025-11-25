@@ -121,6 +121,16 @@ jobs:
             python manage.py test
 
       # -----------------------------------
+      # DOCKER SCOUT – SECURITY ANALYSIS
+      # -----------------------------------
+      - name: Docker Scout – Analyze Image
+        uses: docker/scout-action@v1
+        with:
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
+          command: cves
+          only-fixed: true
+
+      # -----------------------------------
       # DOCKER HUB PUSH
       # -----------------------------------
       - name: Log in to Docker Hub
