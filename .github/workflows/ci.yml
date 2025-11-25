@@ -53,30 +53,34 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # -----------------------------------
+      # DETECT FILES FOR SNYK
+      # -----------------------------------
+      - name: Detect Snyk project files
+        id: snyk-detect
+        run: |
+          if [ -f "requirements.txt" ]; then echo "python=true" >> $GITHUB_OUTPUT; fi
+          if [ -f "package.json" ]; then echo "node=true" >> $GITHUB_OUTPUT; fi
+
+      # -----------------------------------
       # SNYK SECURITY SCANS
       # -----------------------------------
-
-      # Snyk CLI installation
       - name: Setup Snyk CLI
         uses: snyk/actions/setup@v3
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Python dependency scan
       - name: Snyk Open Source Scan (Python)
-        if: exists('requirements.txt')
+        if: steps.snyk-detect.outputs.python == 'true'
         run: snyk test --file=requirements.txt --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Node dependency scan
       - name: Snyk Open Source Scan (Node)
-        if: exists('package.json')
+        if: steps.snyk-detect.outputs.node == 'true'
         run: snyk test --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Snyk static code analysis
       - name: Snyk Code Analysis (Static Code)
         run: snyk code test --severity-threshold=high
         env:
@@ -106,7 +110,7 @@ jobs:
             python manage.py test
 
       # -----------------------------------
-      # PUSH TO DOCKER HUB (ONLY IF SUCCESS)
+      # PUSH TO DOCKER HUB
       # -----------------------------------
       - name: Log in to Docker Hub
         if: success()
