@@ -133,8 +133,10 @@ jobs:
           format: table
           write-comment: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          registry-user: ${{ secrets.REGISTRY_USER }}
-          registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+
+          # *** ESTAS SON LAS CORRECTAS ***
+          registry-user: ${{ secrets.DOCKERHUB_USERNAME }}
+          registry-password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # -----------------------------------
       # DOCKER HUB PUSH
