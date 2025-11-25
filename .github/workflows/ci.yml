@@ -1,4 +1,4 @@
-name: CI - Build, Test, SonarCloud & Publish
+name: CI - Build, Test, SonarCloud, Security & Publish
 
 on:
   push:
@@ -108,7 +108,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build \
+          docker buildx build \
+            --load \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
             .
 
@@ -119,6 +120,19 @@ jobs:
             -e DJANGO_SETTINGS_MODULE=AutoParts.settings \
             ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
             python manage.py test
+
+      # -----------------------------------
+      # DOCKER SCOUT (LOCAL ANALYSIS)
+      # -----------------------------------
+      - name: Install Docker Scout CLI
+        run: |
+          curl -fsSL https://get.docker.com/rootless | sh
+          docker scout version || true
+
+      - name: Docker Scout Analysis
+        run: |
+          docker scout quickview ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
+          docker scout cves ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} --only-severity high
 
       # -----------------------------------
       # DOCKER HUB PUSH
