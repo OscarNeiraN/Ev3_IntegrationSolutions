@@ -61,6 +61,7 @@ jobs:
       # GITHUB ADVANCED SECURITY – DEPENDENCY REVIEW
       # -----------------------------------
       - name: GitHub Advanced Security – Dependency Review
+        if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
