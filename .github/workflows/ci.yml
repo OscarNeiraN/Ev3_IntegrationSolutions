@@ -124,10 +124,6 @@ jobs:
       # -----------------------------------
       # DOCKER SCOUT (LOCAL ANALYSIS)
       # -----------------------------------
-      - name: Install Docker Scout CLI
-        run: |
-          curl -fsSL https://get.docker.com/rootless | sh
-          docker scout version || true
 
       - name: Docker Scout Analysis
         run: |
