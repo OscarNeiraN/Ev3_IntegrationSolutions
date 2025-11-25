@@ -56,17 +56,29 @@ jobs:
       # SNYK SECURITY SCANS
       # -----------------------------------
 
-      - name: Snyk Open Source Scan (Dependencies)
-        uses: snyk/actions/node@master
-        with:
-          args: test --all-projects --severity-threshold=high
+      # Snyk CLI installation
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@v3
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+      # Python dependency scan
+      - name: Snyk Open Source Scan (Python)
+        if: exists('requirements.txt')
+        run: snyk test --file=requirements.txt --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Node dependency scan
+      - name: Snyk Open Source Scan (Node)
+        if: exists('package.json')
+        run: snyk test --severity-threshold=high
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      # Snyk static code analysis
       - name: Snyk Code Analysis (Static Code)
-        uses: snyk/actions/node@master
-        with:
-          args: code test --severity-threshold=high
+        run: snyk code test --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
