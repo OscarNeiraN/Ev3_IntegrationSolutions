@@ -124,7 +124,6 @@ jobs:
       # -----------------------------------
       # DOCKER SCOUT (LOCAL ANALYSIS)
       # -----------------------------------
-
       - name: Docker Scout Analysis
         run: |
           docker scout quickview ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
