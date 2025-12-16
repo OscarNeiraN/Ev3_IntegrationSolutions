@@ -121,7 +121,7 @@ jobs:
       - name: Docker Scout Analysis
         run: |
           docker scout quickview ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
-          docker scout cves ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} #--only-severity high,medium --exit-code
+          docker scout cves ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} --only-severity high,medium --exit-code
 
 
       - name: Log in to Docker Hub
