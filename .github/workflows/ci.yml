@@ -139,3 +139,46 @@ jobs:
 
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+
+acceptance-test:
+    needs: build-test-sonar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull and Run for Test
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+          docker run -d --name test-app -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+          sleep 10
+
+      - name: Verify Service (Acceptance)
+        run: |
+          curl --fail http://localhost:8000/ || exit 1
+          echo "Prueba de aceptación completada"
+
+deploy-to-ec2:
+    needs: acceptance-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: 
+      name: production  # Requisito: Crea este entorno en GitHub Settings -> Environments
+    
+    steps:
+      - name: Deploy via SSH to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+            sudo docker stop autoparts-prod || true
+            sudo docker rm autoparts-prod || true
+            sudo docker run -d --name autoparts-prod -p 80:8000 ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+            sudo docker image prune -f
