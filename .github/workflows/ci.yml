@@ -2,7 +2,7 @@ name: CI - Build, Test, SonarCloud, Security & Publish
 
 on:
   push:
-    branches: [ 'develop' ]
+    branches: [ 'develop', 'main' ]
   pull_request:
     branches: [ 'main' ]
 
