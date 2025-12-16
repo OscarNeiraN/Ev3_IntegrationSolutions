@@ -1,4 +1,5 @@
-FROM python:3.11-slim  #imagen oficial de python 
+FROM python:3.11-slim  
+#imagen oficial de python 
 
 #variables de entorno
 ENV PYTHONDONTWRITEBYTECODE=1 
