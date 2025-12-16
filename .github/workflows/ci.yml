@@ -14,14 +14,11 @@ permissions:
 jobs:
   build-test-sonar:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,14 +38,11 @@ jobs:
         run: |
           if [ -f "package.json" ]; then npm install; fi
 
-
-
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3.1.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: GitHub Advanced Security – Dependency Review
         if: github.event_name == 'pull_request'
@@ -84,7 +78,6 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
@@ -106,23 +99,20 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
             python manage.py test
 
-
       - name: Install Docker Scout
         run: |
           curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh
           echo "$HOME/.docker/bin" >> $GITHUB_PATH
           docker scout version
+
       - name: Log in to Docker Hub for Scout
         run: |
           echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-
-
       - name: Docker Scout Analysis
         run: |
           docker scout quickview ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
-          docker scout cves ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} #--only-severity high,medium --exit-code
-
+          docker scout cves ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
 
       - name: Log in to Docker Hub
         if: success()
@@ -136,6 +126,48 @@ jobs:
         run: |
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }} \
                      ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
-
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+
+  acceptance-test:
+    needs: build-test-sonar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull and Run for Test
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+          docker run -d --name test-app -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+          sleep 10
+
+      - name: Verify Service (Acceptance)
+        run: |
+          curl --fail http://localhost:8000/ || exit 1
+          echo "Prueba de aceptación completada"
+
+  deploy-to-ec2:
+    needs: acceptance-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+    
+    steps:
+      - name: Deploy via SSH to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+            sudo docker stop autoparts-prod || true
+            sudo docker rm autoparts-prod || true
+            sudo docker run -d --name autoparts-prod -p 80:8000 ${{ secrets.DOCKERHUB_USERNAME }}/autoparts:latest
+            sudo docker image prune -f
