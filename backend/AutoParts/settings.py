@@ -24,7 +24,7 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, '..', '.env'))
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
-# Quick-start development settings - unsuitable for production
+# Quick-start development settings - unsuitable for production sddsdd
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
